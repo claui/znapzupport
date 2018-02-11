@@ -47,6 +47,7 @@ function _znaphodl {
   local target_dataset_key
 
   set -eu
+  sudo -v
 
   source_dataset="${1?}"
   target_dataset_key="${2?}"
@@ -90,11 +91,11 @@ function _znaphodl {
   fi
 
   echo "Holding latest snapshot: ${latest_common_snapshot}"
-  zfs hold "${source_hold_tag}" \
+  sudo zfs hold "${source_hold_tag}" \
     "${latest_common_snapshot}"
 
   echo "Releasing tagged snapshot: ${tagged_source_snapshot}"
-  zfs release "${source_hold_tag}" \
+  sudo zfs release "${source_hold_tag}" \
     "${tagged_source_snapshot}"
 
   echo "Tag ${source_hold_tag} has been moved successfully"
