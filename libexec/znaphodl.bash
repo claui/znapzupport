@@ -32,10 +32,10 @@ function _load_tagged_source_snapshot {
     zfs list -r -H -t snapshot -o name "${source_dataset}" \
       | xargs -n 1 zfs holds -r -H \
       | awk -F '\t' -v "tag=${source_hold_tag}" \
-        -e '$2 == tag && found {' \
-        -e '  print "Duplicate tag: "tag > "/dev/stderr"; exit 1' \
-        -e '}' \
-        -e '$2 == tag { found = 1; print $1 }'
+        '$2 == tag && found {
+          print "Duplicate tag: "tag > "/dev/stderr"; exit 1
+        }
+        $2 == tag { found = 1; print $1 }'
   )"
 }
 
