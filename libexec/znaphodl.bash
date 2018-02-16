@@ -1,4 +1,4 @@
-function _load_latest_common_snapshot {
+function __znaphodl__load_latest_common_snapshot {
   latest_common_snapshot="$(
     comm -12 \
       <(
@@ -15,9 +15,9 @@ function _load_latest_common_snapshot {
   )"
 }
 
-export -f _load_latest_common_snapshot
+export -f __znaphodl__load_latest_common_snapshot
 
-function _load_target_dataset {
+function __znaphodl__load_target_dataset {
   target_dataset="$(
     znapzendzetup export "${source_dataset}" 2>/dev/null \
       | awk -F = -v "key=${target_dataset_key}" \
@@ -25,9 +25,9 @@ function _load_target_dataset {
   )"
 }
 
-export -f _load_target_dataset
+export -f __znaphodl__load_target_dataset
 
-function _load_tagged_source_snapshot {
+function __znaphodl__load_tagged_source_snapshot {
   tagged_source_snapshot="$(
     zfs list -r -H -t snapshot -o name "${source_dataset}" \
       | xargs -n 1 zfs holds -r -H \
@@ -39,9 +39,9 @@ function _load_tagged_source_snapshot {
   )"
 }
 
-export -f _load_tagged_source_snapshot
+export -f __znaphodl__load_tagged_source_snapshot
 
-function _znaphodl {
+function __znaphodl {
   local latest_common_snapshot source_dataset source_hold_tag
   local tagged_source_snapshot target_dataset
   local target_dataset_key
@@ -52,14 +52,14 @@ function _znaphodl {
   source_dataset="${1?}"
   target_dataset_key="${2?}"
 
-  _load_target_dataset
+  __znaphodl__load_target_dataset
 
   zfs list "${target_dataset}" >/dev/null
   source_hold_tag="remote/${target_dataset}"
 
   echo "Auditing snapshot tag: ${source_hold_tag}"
 
-  _load_tagged_source_snapshot
+  __znaphodl__load_tagged_source_snapshot
 
   if [[ ! "${tagged_source_snapshot}" ]]; then
     echo >&2 "[ERROR] Tag ${source_hold_tag} not found" \
@@ -71,7 +71,7 @@ function _znaphodl {
 
   echo "Previously tagged snapshot: ${tagged_source_snapshot}"
 
-  _load_latest_common_snapshot
+  __znaphodl__load_latest_common_snapshot
 
   if [[ ! "${latest_common_snapshot}" ]]; then
     echo >&2 '[ERROR] Unable to find a common snapshot in' \
@@ -102,4 +102,4 @@ function _znaphodl {
   echo "Done"
 }
 
-export -f _znaphodl
+export -f __znaphodl

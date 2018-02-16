@@ -6,4 +6,4 @@ BASENAME="$(basename "${BASH_SOURCE[0]}")"
 
 popd > /dev/null
 shopt -s extglob
-_"${BASENAME//+([^a-z0-9_])/_}" "$@"
+__"${BASENAME//+([^a-z0-9_])/_}" "$@"

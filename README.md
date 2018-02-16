@@ -12,9 +12,13 @@ If you do use znapzupport, be advised that it is largely untested.
 
 ## System requirements
 
-- To use znapzupport, you need OS&nbsp;X 10.11 El Capitan, macOS 10.12 Sierra, or a later macOS version.
+To use znapzupport, you need:
 
-- You also need znapzend version 0.17.0 or newer.
+- OS&nbsp;X 10.11 El Capitan, macOS 10.12 Sierra, or a later macOS version;
+
+- ZFS; and
+
+- znapzend version 0.17.0 or newer.
 
 
 ## Installation
@@ -32,7 +36,7 @@ brew install znapzupport
 
 ## znaphodl
 
-At this time, znapzupport ships with just a single program, `znaphodl`. It is a **post-send handler for ZnapZend** designed to solve a common issue with the automatic cleanup feature built into ZnapZend.
+`znaphodl` is a **post-send handler for ZnapZend** designed to solve a common issue with the automatic cleanup feature built into ZnapZend.
 
 
 ### Why znaphodl?
@@ -44,7 +48,7 @@ In other words: whenever I wait too long with my backup, the entire chain of sna
 This is why I wrote `znaphodl`.
 
 
-## How znaphodl works
+### How znaphodl works
 
 When used as a post-send handler in a `DST` entry in ZnapZend, `znaphodl` causes the `SRC` dataset to hold onto at least one snapshot which is also present in the `DST` entry.
 
@@ -81,6 +85,30 @@ sudo znapzendzetup create \
     ocean/big/backup \
     off 'znaphodl pool/tank mydstkey'
 ```
+
+
+## znaplizt
+
+`znaplizt` displays a list of **home and backup datasets.**
+
+A **home dataset** is a ZFS dataset which has a `cat.claudi:id` property (dubbed _dataset ID_) with a non-null value.
+
+A **backup dataset** is associated to a specific home dataset; it is defined as a ZFS dataset named `${pool}/backup/${dataset_id}/${username}`, with:
+
+- `${pool}` being the zpool name;
+
+- `${dataset_id}` being the dataset ID of the home dataset; and
+
+- `${username}` being the name of the current user.
+
+The `znaplizt` command only shows imported datasets.
+
+For each home or backup dataset, the command also lists its associated snapshots.
+
+
+## zpoolz
+
+`zpoolz` prints the names of the currently imported zpools.
 
 
 ## Legal notice
