@@ -11,16 +11,20 @@ function __znaplizt {
   local backup_selected=1
   local dataset=
   local dataset_id=
+  local debug=0
   local home_datasets=()
   local home_poolname
   local home_selected=1
   local poolnames
   local username="$(whoami)"
 
-  while getopts ':bhm:' option; do
+  while getopts ':bdhm:' option; do
     case "${option}" in
     b)
       home_selected=0
+      ;;
+    d)
+      debug=1
       ;;
     h)
       backup_selected=0
@@ -34,7 +38,8 @@ function __znaplizt {
       ;;
     '?')
       echo >&2 "Usage:" \
-        "$(basename "$0") [-b|-h] [-m dataset_id] [pool] ..."
+        "$(basename "$0") [-b|-h] [-d] [-m dataset_id]" \
+        "[pool] ..."
       return 1
       ;;
     esac
@@ -57,9 +62,14 @@ function __znaplizt {
     return 1
   fi
 
-  echo >&2 "Found ${#poolnames[@]} pool(s)"
+  if [[ "${debug}" -ne 0 ]]; then
+    echo >&2 "Found ${#poolnames[@]} pool(s)"
+  fi
 
-  echo >&2 'Looking for home dataset'
+  if [[ "${debug}" -ne 0 ]]; then
+    echo >&2 'Looking for home dataset'
+  fi
+
   for home_poolname in "${poolnames[@]}"; do
     if {
       __dataset_id__load_dataset_record -r "${home_poolname}";
@@ -69,7 +79,9 @@ function __znaplizt {
       fi
 
       if [[ "${backup_selected}" -ne 0 ]]; then
-        echo >&2 "Looking for backup datasets of ${dataset}"
+        if [[ "${debug}" -ne 0 ]]; then
+          echo >&2 "Looking for backup datasets of ${dataset}"
+        fi
 
         for backup_poolname in "${poolnames[@]}"; do
           backup_dataset="${backup_poolname}/backup/${dataset_id}`
@@ -85,8 +97,10 @@ function __znaplizt {
     fi
   done
 
-  echo >&2 "Found ${#home_datasets[@]} home dataset(s)"
-  echo >&2 "Found ${#backup_datasets[@]} backup dataset(s)"
+  if [[ "${debug}" -ne 0 ]]; then
+    echo >&2 "Found ${#home_datasets[@]} home dataset(s)"
+    echo >&2 "Found ${#backup_datasets[@]} backup dataset(s)"
+  fi
 
   for dataset in "${home_datasets[@]}"; do
     echo $'\nHome dataset'
