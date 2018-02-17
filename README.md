@@ -86,6 +86,12 @@ sudo znapzendzetup create \
     off 'znaphodl pool/tank mydstkey'
 ```
 
+## znaphodlz
+
+`znaphodlz` prints a list of rolling hold tags (see `znaphodl`). The list is grouped by the associated `SRC` dataset.
+
+`znaphodlz` currently does not support command-line options.
+
 
 ## znaplizt
 
