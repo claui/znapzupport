@@ -106,6 +106,19 @@ The `znaplizt` command only shows imported datasets.
 For each home or backup dataset, the command also lists its associated snapshots.
 
 
+### Command-line options
+
+The `znaplizt` command supports the following command-line options:
+
+- `-b` List only backup datasets. Cannot be used together with `-h`.
+
+- `-h` List only home datasets. Not compatible with the `-b` option.
+
+- `-m dataset_id` List only a specific home dataset, whose `cat.claudi:id` is equal to the given `dataset_id`.
+
+- `-v` Be more verbose.
+
+
 ## zpoolz
 
 `zpoolz` prints the names of the currently imported zpools.

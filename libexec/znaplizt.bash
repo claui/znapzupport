@@ -11,20 +11,17 @@ function __znaplizt {
   local backup_selected=1
   local dataset=
   local dataset_id=
-  local debug=0
+  local verbose=0
   local home_datasets=()
   local home_poolname
   local home_selected=1
   local poolnames
   local username="$(whoami)"
 
-  while getopts ':bdhm:' option; do
+  while getopts ':bvhm:' option; do
     case "${option}" in
     b)
       home_selected=0
-      ;;
-    d)
-      debug=1
       ;;
     h)
       backup_selected=0
@@ -32,13 +29,16 @@ function __znaplizt {
     m)
       dataset_id="${OPTARG}"
       ;;
+    v)
+      verbose=1
+      ;;
     ':')
       printf >&2 "Option -%s requires an argument.\n" "${OPTARG}"
       return 1
       ;;
     '?')
       echo >&2 "Usage:" \
-        "$(basename "$0") [-b|-h] [-d] [-m dataset_id]" \
+        "$(basename "$0") [-b|-h] [-v] [-m dataset_id]" \
         "[pool] ..."
       return 1
       ;;
@@ -62,11 +62,11 @@ function __znaplizt {
     return 1
   fi
 
-  if [[ "${debug}" -ne 0 ]]; then
+  if [[ "${verbose}" -ne 0 ]]; then
     echo >&2 "Found ${#poolnames[@]} pool(s)"
   fi
 
-  if [[ "${debug}" -ne 0 ]]; then
+  if [[ "${verbose}" -ne 0 ]]; then
     echo >&2 'Looking for home dataset'
   fi
 
@@ -79,7 +79,7 @@ function __znaplizt {
       fi
 
       if [[ "${backup_selected}" -ne 0 ]]; then
-        if [[ "${debug}" -ne 0 ]]; then
+        if [[ "${verbose}" -ne 0 ]]; then
           echo >&2 "Looking for backup datasets of ${dataset}"
         fi
 
@@ -97,7 +97,7 @@ function __znaplizt {
     fi
   done
 
-  if [[ "${debug}" -ne 0 ]]; then
+  if [[ "${verbose}" -ne 0 ]]; then
     echo >&2 "Found ${#home_datasets[@]} home dataset(s)"
     echo >&2 "Found ${#backup_datasets[@]} backup dataset(s)"
   fi
