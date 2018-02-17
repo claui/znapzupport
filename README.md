@@ -16,7 +16,7 @@ To use znapzupport, you need:
 
 - OS&nbsp;X 10.11 El Capitan, macOS 10.12 Sierra, or a later macOS version;
 
-- ZFS; and
+- the [open source port of OpenZFS for macOS](https://openzfsonosx.org); and
 
 - znapzend version 0.17.0 or newer.
 
@@ -34,27 +34,55 @@ brew install znapzupport
 ```
 
 
+# The commands
+
+The `znapzupport` suite consists of the following commands:
+
+|   Command   |   Purpose   |
+|:----------- |:----------- |
+| `znaphodl`  | Protect load-bearing snapshots from being removed by ZnapZend |
+| `znaphodlz` | Print a list of rolling hold tags |
+| `znaplizt`  | Print a list of home and backup datasets |
+| `zpoolz`    | Print a list of zpools |
+
+
 ## znaphodl
 
-`znaphodl` is a **post-send handler for ZnapZend** designed to solve a common issue with the automatic cleanup feature built into ZnapZend.
+While I love ZnapZend almost as much as I love ZFS, it does not try to solve the following problem:
+
+1. I have a number of USB media.
+
+2. For backup purposes, I use ZnapZend to incrementally `zfs send` my laptop’s home pool (SRC) to the USB media (DST).
+
+3. I keep those drives at multiple locations for redundancy. I visit some of those DSTs almost daily, while other DSTs don’t get updated for weeks.
+
+4. Due to space constraints, I have set up ZnapZend to keep a fairly small number of snapshots on my laptop (SRC), while the backup drives (DSTs) are configured to hold their snapshots for longer periods.
+
+5. Regardless, my goal is that each DST gets to keep a long trail, and should always be ready to receive incremental snapshots, even if not visited for weeks or months.
+
+To receive incremental snapshots, every DST needs to keep a common snapshot relative to SRC, which I’ll call a **load-bearing snapshot** for the purpose of this discussion.
+
+The issue I have with ZnapZend is that its automatic cleanup feature does not discriminate between normal snapshots and load-bearing snapshots on my SRC; it deletes either as soon as it thinks its time has come. Because of \#4 and \#5, it often happened that one or more of my DSTs stop accepting snapshots because ZnapZend removed a load-bearing snapshot from my SRC.
+
+`znaphodl` is a **post-send handler for ZnapZend** designed to solve this issue by setting a rolling hold tag on load-bearing snapshots.
 
 
-### Why znaphodl?
+### Wait, I didn’t catch that.
 
-In my opinion, ZnapZend’s automatic cleanup feature does a very good job; however, for my personal use case (i. e. sending my laptop’s local ZFS snapshots to an external storage for backup), ZnapZend fails to take into account that at least one common snapshot needs to remain in both the source and the destination dataset.
+I use ZnapZend to back up my zpool. Whenever I wait too long between backups, ZnapZend deletes my snapshots. Sometimes that breaks my backup chain.
 
-In other words: whenever I wait too long with my backup, the entire chain of snapshots breaks, and cannot be used anymore for incremental backups. I have to delete all snapshots from my external media and start over.
+I then have to delete all snapshots from my external media and start over, which is not what I want.
 
-This is why I wrote `znaphodl`.
+This is why I wrote `znaphodl`, a tool which protects load-bearing snapshots from being deleted.
 
 
 ### How znaphodl works
 
-When used as a post-send handler in a `DST` entry in ZnapZend, `znaphodl` causes the `SRC` dataset to hold onto at least one snapshot which is also present in the `DST` entry.
+When used as a post-send handler for a `DST` entry in ZnapZend, `znaphodl` causes the `SRC` dataset to hold onto at least one snapshot which has a twin sibling in `DST`.
 
-`znaphodl` accomplishes this by calculating the latest common snapshot; then `znaphodl` instructs the `SRC` dataset to `zfs hold` onto that common snapshot. `znaphodl` uses a _rolling ZFS hold tag,_ whose name is derived from the corresponding `DST` dataset. This ensures that the ZFS hold tag is unique to each `DST` dataset.
+`znaphodl` accomplishes this by calculating the latest load-bearing snapshot for each DST. It then instructs ZFS to `hold` onto that load-bearing snapshot, which means ZnapZend won’t be able to delete it. `znaphodl` uses a distinct _rolling tag_ for each corresponding `DST` dataset. This ensures that the tag will be unique to each `DST` dataset.
 
-Whenever a new common snapshot appears on the `DST` dataset, `znaphodl` moves the rolling tag to that new common snapshot. The previously tagged snapshot becomes then eligible for cleanup on the `SRC` dataset (as soon as the ZnapZend configuration allows that).
+Whenever `znaphodl` detects a new load-bearing snapshot appears on the `DST` dataset, it moves the rolling tag to that new snapshot. The snapshot previously tagged will then become eligible for cleanup, and ZnapZend will be able to delete it from `SRC` as soon as its configuration allows.
 
 
 ### Using znaphodl
@@ -85,6 +113,9 @@ sudo znapzendzetup create \
     ocean/big/backup \
     off 'znaphodl pool/tank mydstkey'
 ```
+
+The `znaphodl` command does not support any command-line options at this time.
+
 
 ## znaphodlz
 
@@ -127,15 +158,17 @@ The `znaplizt` command supports the following command-line options:
 
 ## zpoolz
 
-`zpoolz` prints the names of the currently imported zpools.
+`zpoolz` prints the name of each zpool that is currently imported.
+
+It does not support any command-line options at this time.
 
 
-## Legal notice
+# Legal notice
 
 This suite of programs is in no way affiliated with, nor has it any connection to, nor is it being endorsed by OETIKER+PARTNER, nor by any of its websites or subsidiaries, nor by any of the ZnapZend authors.
 
 
-## License
+# License
 
 Copyright (c) 2018 Claudia <clau@tiqua.de>
 
