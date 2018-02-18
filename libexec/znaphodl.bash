@@ -22,7 +22,8 @@ function __znaphodl__load_target_dataset {
     set -o pipefail
     znapzendzetup export "${source_dataset}" 2>/dev/null \
       | awk -F = -v "key=${target_dataset_key}" \
-        '$1 == "dst_"key { print $2 }'
+        '$1 == "dst_"key { found = 1; print $2 }
+        END { if (!found) exit 1 }'
   )"
 }
 
