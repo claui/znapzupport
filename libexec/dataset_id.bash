@@ -1,6 +1,6 @@
 function __dataset_id__print_usage {
   echo "Usage:" \
-    "$(basename "$0") [-r] filesystem ..."
+    "$(basename -- "$0") [-r] filesystem ..."
 }
 
 export -f __dataset_id__print_usage

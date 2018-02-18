@@ -1,6 +1,6 @@
 #!/bin/bash
-pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
-BASENAME="$(basename "${BASH_SOURCE[0]}")"
+pushd "$(dirname -- "${BASH_SOURCE[0]}")/.." > /dev/null
+BASENAME="$(basename -- "${BASH_SOURCE[0]}")"
 
 . "libexec/${BASENAME}.bash"
 

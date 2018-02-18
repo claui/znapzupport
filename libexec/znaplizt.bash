@@ -38,7 +38,7 @@ function __znaplizt {
       ;;
     '?')
       echo >&2 "Usage:" \
-        "$(basename "$0") [-b|-h] [-v] [-m dataset_id]" \
+        "$(basename -- "$0") [-b|-h] [-v] [-m dataset_id]" \
         "[pool] ..."
       return 1
       ;;
