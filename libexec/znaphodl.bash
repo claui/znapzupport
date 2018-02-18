@@ -19,6 +19,7 @@ export -f __znaphodl__load_latest_common_snapshot
 
 function __znaphodl__load_target_dataset {
   target_dataset="$(
+    set -o pipefail
     znapzendzetup export "${source_dataset}" 2>/dev/null \
       | awk -F = -v "key=${target_dataset_key}" \
         '$1 == "dst_"key { print $2 }'
