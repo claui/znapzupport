@@ -83,5 +83,3 @@ function __dataset_id__dataset_record {
 }
 
 export -f __dataset_id__dataset_record
-
-__dataset_id__load_dataset_record -r pool
