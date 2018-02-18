@@ -1,6 +1,20 @@
 source libexec/dataset_id.bash
 source libexec/zpoolz.bash
 
+function __znaplizt__summarize_dataset {
+  local dataset
+
+  dataset="${1?}"
+  echo '# Summary'
+  zfs get -H -o name,property,value \
+    used,logicalused,usedbydataset,logicalreferenced`
+      `,usedbysnapshots \
+    "${dataset}" \
+    | xxargs -r printf '%s    %-18s%10s\n'
+}
+
+export -f __znaplizt__summarize_dataset
+
 function __znaplizt {
   local OPTIND=1
   local option
@@ -12,14 +26,15 @@ function __znaplizt {
   local dataset=
   local dataset_id=
   local given_dataset_id=
-  local verbose=0
   local home_datasets=()
   local home_poolname
   local home_selected=1
   local poolnames
+  local summarize=0
   local username="$(whoami)"
+  local verbose=0
 
-  while getopts ':bvhm:' option; do
+  while getopts ':bvhm:s' option; do
     case "${option}" in
     b)
       home_selected=0
@@ -30,6 +45,9 @@ function __znaplizt {
     m)
       given_dataset_id="${OPTARG}"
       ;;
+    s)
+      summarize=1
+      ;;
     v)
       verbose=1
       ;;
@@ -39,7 +57,7 @@ function __znaplizt {
       ;;
     '?')
       echo >&2 "Usage:" \
-        "$(basename -- "$0") [-b|-h] [-v] [-m dataset_id]" \
+        "$(basename -- "$0") [-b|-h] [-s] [-v] [-m dataset_id]" \
         "[pool] ..."
       return 1
       ;;
@@ -116,15 +134,25 @@ function __znaplizt {
 
   for dataset in "${home_datasets[@]}"; do
     echo $'\nHome dataset'
+
     zfs list -d 1 \
       -o name,userrefs,used,logicalreferenced,written \
       -s creation -t all "${dataset}"
+
+    if [[ "${summarize}" -ne 0 ]]; then
+      __znaplizt__summarize_dataset "${dataset}"
+    fi
   done
   for dataset in "${backup_datasets[@]}"; do
     echo $'\nBackup dataset'
+
     zfs list -d 1 \
       -o name,used,logicalreferenced,written \
       -s creation -t all "${dataset}"
+
+    if [[ "${summarize}" -ne 0 ]]; then
+      __znaplizt__summarize_dataset "${dataset}"
+    fi
   done
 }
 
