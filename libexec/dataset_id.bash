@@ -40,13 +40,17 @@ export -f __dataset_id__load_dataset_record
 function __dataset_id__dataset_record {
   local DATASET_ID_PROPERTY_NAME='cat.claudi:id'
 
+  local dataset_id
   local OPTIND=1
   local option
-  local dataset
+  local parent_dataset
   local recursive=0
 
-  while getopts ':r' option; do
+  while getopts ':rm:' option; do
     case "${option}" in
+    m)
+      dataset_id="${OPTARG}"
+      ;;
     r)
       recursive=1
       ;;
@@ -59,9 +63,9 @@ function __dataset_id__dataset_record {
 
   shift "$(($OPTIND-1))"
 
-  dataset="$1"
+  parent_dataset="$1"
 
-  if [[ ! "${dataset}" ]]; then
+  if [[ ! "${parent_dataset}" ]]; then
     __dataset_id__print_usage >&2
     return 1
   fi
@@ -71,12 +75,23 @@ function __dataset_id__dataset_record {
     if [[ "${recursive}" -ne 0 ]]; then
       set -- -r "$@"
     fi
-    zfs get "$@" -H -o name,value,source -t filesystem \
-      "${DATASET_ID_PROPERTY_NAME}" "${dataset}" \
-      | awk -F '\t' '
-        $3 == "local" { print $1"\t"$2; found=1; exit }
-        END { exit !found }
-      '
+    if [[ "${dataset_id}" ]]; then
+      zfs get "$@" -H -o name,value,source -t filesystem \
+        "${DATASET_ID_PROPERTY_NAME}" "${parent_dataset}" \
+        | awk -v "dataset_id=${dataset_id}" -F '\t' '
+          $2 == dataset_id && $3 == "local" {
+            print $1"\t"$2; found=1; exit
+          }
+          END { exit !found }
+        '
+    else
+      zfs get "$@" -H -o name,value,source -t filesystem \
+        "${DATASET_ID_PROPERTY_NAME}" "${parent_dataset}" \
+        | awk -F '\t' '
+          $3 == "local" { print $1"\t"$2; found=1; exit }
+          END { exit !found }
+        '
+    fi
   )
 
   return "$?"
