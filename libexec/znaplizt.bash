@@ -34,7 +34,7 @@ function __znaplizt {
   local username="$(whoami)"
   local verbose=0
 
-  while getopts ':bvhm:s' option; do
+  while getopts ':bhsvm:' option; do
     case "${option}" in
     b)
       home_selected=0
@@ -42,14 +42,14 @@ function __znaplizt {
     h)
       backup_selected=0
       ;;
-    m)
-      given_dataset_id="${OPTARG}"
-      ;;
     s)
       summarize=1
       ;;
     v)
       verbose=1
+      ;;
+    m)
+      given_dataset_id="${OPTARG}"
       ;;
     ':')
       printf >&2 "Option -%s requires an argument.\n" "${OPTARG}"
