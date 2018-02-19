@@ -75,23 +75,14 @@ function __dataset_id__dataset_record {
     if [[ "${recursive}" -ne 0 ]]; then
       set -- -r "$@"
     fi
-    if [[ "${dataset_id}" ]]; then
-      zfs get "$@" -H -o name,value,source -t filesystem \
-        "${DATASET_ID_PROPERTY_NAME}" "${parent_dataset}" \
-        | awk -v "dataset_id=${dataset_id}" -F '\t' '
-          $2 == dataset_id && $3 == "local" {
-            print $1"\t"$2; found=1; exit
-          }
+    zfs get "$@" -H -o name,value -s local -t filesystem \
+      "${DATASET_ID_PROPERTY_NAME}" "${parent_dataset}" \
+      | awk -v 'OFS=\t' -v 'ORS=' \
+        -v "dataset_id=${dataset_id:-.*}" \
+        '
+          $2 ~ "^"dataset_id"$" { print $1, $2; found = 1; exit }
           END { exit !found }
         '
-    else
-      zfs get "$@" -H -o name,value,source -t filesystem \
-        "${DATASET_ID_PROPERTY_NAME}" "${parent_dataset}" \
-        | awk -F '\t' '
-          $3 == "local" { print $1"\t"$2; found=1; exit }
-          END { exit !found }
-        '
-    fi
   )
 
   return "$?"
