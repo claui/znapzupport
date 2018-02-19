@@ -7,8 +7,8 @@ function __znaplizt__summarize_dataset {
   dataset="${1?}"
   echo '# Summary'
   zfs get -H -o name,property,value \
-    used,logicalused,usedbydataset,logicalreferenced`
-      `,usedbysnapshots \
+    used,logicalused,usedbydataset`
+      `,referenced,logicalreferenced,usedbysnapshots \
     "${dataset}" \
     | xxargs -r printf '%s    %-18s%10s\n'
 }
