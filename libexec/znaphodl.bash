@@ -1,3 +1,10 @@
+function __znaphodl__cleanup {
+  [[ "${fifoname:-}" ]] && rm "${fifoname}"
+  [[ "${fifodir:-}" ]] && rmdir "${fifodir}"
+}
+
+export -f __znaphodl__cleanup
+
 function __znaphodl__load_latest_common_snapshot {
   latest_common_snapshot="$(
     comm -12 \
@@ -6,7 +13,12 @@ function __znaphodl__load_latest_common_snapshot {
           -s creation -t snapshot "${source_dataset}"
       ) \
       <(
-        zfs list -d 1 -H -o name \
+        if [[ "${target_hostname}" ]]; then
+          set -- sudo ssh "${target_hostname}"
+        else
+          set --
+        fi
+        "$@" zfs list -d 1 -H -o name \
           -s creation -t snapshot "${target_dataset}" \
           | awk -F @ -v "ds=${source_dataset}" \
             '{ print ds"@"$2 }'
@@ -17,17 +29,46 @@ function __znaphodl__load_latest_common_snapshot {
 
 export -f __znaphodl__load_latest_common_snapshot
 
-function __znaphodl__load_target_dataset {
-  target_dataset="$(
+function __znaphodl__target_dataset_record {
+  (
     set -o pipefail
     znapzendzetup export "${source_dataset}" 2>/dev/null \
-      | awk -F = -v "key=${target_dataset_key}" \
-        '$1 == "dst_"key { found = 1; print $2 }
+      | awk -F [=:] -v 'OFS=\t' -v 'ORS=' \
+        -v "key=${target_dataset_key}" \
+        '$1 == "dst_"key {
+          found = 1
+          if ($3) print $3, $2; else print $2
+        }
         END { if (!found) exit 1 }'
-  )"
+  )
+
+  return "$?"
 }
 
-export -f __znaphodl__load_target_dataset
+export -f __znaphodl__target_dataset_record
+
+function __znaphodl__load_target_dataset_record {
+  local pid exitstatus fifodir fifoname
+
+  trap __znaphodl__cleanup EXIT INT HUP TERM
+  fifodir="$(mktemp -d)"
+  fifoname="${fifodir}/znaphodl.$RANDOM.fifo"
+  mkfifo -m0600 "${fifoname}" || return 1
+
+  (__znaphodl__target_dataset_record) > "${fifoname}" &
+  pid="$!"
+  IFS=$'\t' read -d $'\n' target_dataset target_hostname \
+    < "${fifoname}" \
+    || true
+
+  wait "${pid}" || exitstatus="$?"
+
+  __znaphodl__cleanup
+  trap - EXIT INT HUP TERM
+  return "${exitstatus:-0}"
+}
+
+export -f __znaphodl__load_target_dataset_record
 
 function __znaphodl__load_tagged_source_snapshot {
   tagged_source_snapshot="$(
@@ -45,7 +86,7 @@ export -f __znaphodl__load_tagged_source_snapshot
 
 function __znaphodl {
   local latest_common_snapshot source_dataset source_hold_tag
-  local tagged_source_snapshot target_dataset
+  local tagged_source_snapshot target_dataset target_hostname
   local target_dataset_key
 
   set -eu
@@ -54,9 +95,15 @@ function __znaphodl {
   source_dataset="${1?}"
   target_dataset_key="${2?}"
 
-  __znaphodl__load_target_dataset
+  __znaphodl__load_target_dataset_record
 
-  zfs list "${target_dataset}" >/dev/null
+  if [[ "${target_hostname}" ]]; then
+    set -- sudo ssh "${target_hostname}"
+  else
+    set --
+  fi
+  "$@" zfs list "${target_dataset}" >/dev/null
+
   source_hold_tag="remote/${target_dataset}"
 
   echo "Auditing snapshot tag: ${source_hold_tag}"
