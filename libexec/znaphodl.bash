@@ -91,7 +91,7 @@ export -f __znaphodl__target_dataset_record
 function __znaphodl__load_tagged_source_snapshot {
   tagged_source_snapshot="$(
     zfs list -r -H -t snapshot -o name "${source_dataset}" \
-      | xxargs -r -n 1 zfs holds -r -H \
+      | xxargs -r -n 1 -P 0 zfs holds -r -H \
       | awk -F '\t' -v "tag=${source_hold_tag}" \
         '$2 == tag && found {
           print "Duplicate tag: "tag > "/dev/stderr"; exit 1
