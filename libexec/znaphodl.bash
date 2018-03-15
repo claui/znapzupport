@@ -6,6 +6,18 @@ function __znaphodl__cleanup {
 export -f __znaphodl__cleanup
 
 function __znaphodl__load_latest_common_snapshot {
+  local target_snapshots
+
+  target_snapshots="$(
+    if [[ "${target_hostname}" ]]; then
+      set -- sudo ssh -- "${target_hostname}"
+    else
+      set --
+    fi
+    exec "$@" zfs list -d 1 -H -o name \
+      -s creation -t snapshot "${target_dataset}"
+  )"
+
   latest_common_snapshot="$(
     comm -12 \
       <(
@@ -13,15 +25,8 @@ function __znaphodl__load_latest_common_snapshot {
           -s creation -t snapshot "${source_dataset}"
       ) \
       <(
-        if [[ "${target_hostname}" ]]; then
-          set -- sudo ssh "${target_hostname}"
-        else
-          set --
-        fi
-        "$@" zfs list -d 1 -H -o name \
-          -s creation -t snapshot "${target_dataset}" \
-          | awk -F @ -v "ds=${source_dataset}" \
-            '{ print ds"@"$2 }'
+        awk -F @ -v "ds=${source_dataset}" \
+          '{ print ds"@"$2 }' <<< "${target_snapshots}"
       ) \
       | tail -1
   )"
@@ -29,23 +34,18 @@ function __znaphodl__load_latest_common_snapshot {
 
 export -f __znaphodl__load_latest_common_snapshot
 
-function __znaphodl__target_dataset_record {
-  (
-    set -o pipefail
-    znapzendzetup export "${source_dataset}" 2>/dev/null \
-      | awk -F [=:] -v 'OFS=\t' -v 'ORS=' \
-        -v "key=${target_dataset_key}" \
-        '$1 == "dst_"key {
-          found = 1
-          if ($3) print $3, $2; else print $2
-        }
-        END { if (!found) exit 1 }'
-  )
-
-  return "$?"
+function __znaphodl__load_target_dataset_space_available {
+  target_dataset_space_available="$(
+    if [[ "${target_hostname}" ]]; then
+      set -- sudo ssh -- "${target_hostname}"
+    else
+      set --
+    fi
+    exec "$@" zfs get -H -o value available "${target_dataset}"
+  )"
 }
 
-export -f __znaphodl__target_dataset_record
+export -f __znaphodl__load_target_dataset_space_available
 
 function __znaphodl__load_target_dataset_record {
   local pid exitstatus fifodir fifoname
@@ -70,6 +70,24 @@ function __znaphodl__load_target_dataset_record {
 
 export -f __znaphodl__load_target_dataset_record
 
+function __znaphodl__target_dataset_record {
+  (
+    set -o pipefail
+    znapzendzetup export "${source_dataset}" 2>/dev/null \
+      | awk -F [=:] -v 'OFS=\t' -v 'ORS=' \
+        -v "key=${target_dataset_key}" \
+        '$1 == "dst_"key {
+          found = 1
+          if ($3) print $3, $2; else print $2
+        }
+        END { if (!found) exit 1 }'
+  )
+
+  return "$?"
+}
+
+export -f __znaphodl__target_dataset_record
+
 function __znaphodl__load_tagged_source_snapshot {
   tagged_source_snapshot="$(
     zfs list -r -H -t snapshot -o name "${source_dataset}" \
@@ -84,70 +102,118 @@ function __znaphodl__load_tagged_source_snapshot {
 
 export -f __znaphodl__load_tagged_source_snapshot
 
+function __znaphodl__move_tag_to_latest_common_snapshot {
+  echo "Holding latest snapshot: ${latest_common_snapshot}"
+  sudo zfs hold "${source_hold_tag}" "${latest_common_snapshot}"
+
+  echo "Releasing tagged snapshot: ${tagged_source_snapshot}"
+  sudo zfs release "${source_hold_tag}" "${tagged_source_snapshot}"
+
+  echo "Tag ${source_hold_tag} has been moved successfully"
+}
+
+export -f __znaphodl__move_tag_to_latest_common_snapshot
+
 function __znaphodl {
-  local latest_common_snapshot source_dataset source_hold_tag
-  local tagged_source_snapshot target_dataset target_hostname
+  local OPTIND=1
+  local option
+
+  local latest_common_snapshot
+  local log_available_space=0
+  local source_dataset
+  local source_hold_tag
+  local tag_snapshot=1
+  local tagged_source_snapshot
+  local target_dataset
   local target_dataset_key
+  local target_hostname
+  local target_dataset_space_available
 
   set -eu
-  sudo -v
+
+  while getopts ':ln' option; do
+    case "${option}" in
+    l)
+      log_available_space=1
+      ;;
+    n)
+      tag_snapshot=0
+      ;;
+    '?')
+      echo >&2 "Usage:" \
+        "$(basename -- "$0") [-l] [-n]" \
+        "source_dataset target_dataset_key"
+      return 1
+      ;;
+    esac
+  done
+
+  shift "$(($OPTIND-1))"
 
   source_dataset="${1?}"
   target_dataset_key="${2?}"
 
+  sudo -v
+
   __znaphodl__load_target_dataset_record
 
   if [[ "${target_hostname}" ]]; then
-    set -- sudo ssh "${target_hostname}"
+    set -- sudo ssh -- "${target_hostname}"
   else
     set --
   fi
   "$@" zfs list "${target_dataset}" >/dev/null
 
-  source_hold_tag="remote/${target_dataset}"
+  if [[ "${tag_snapshot}" -eq 0 ]]; then
+    echo >&2 "[INFO] Skipping snapshot tag update"
+  else
+    source_hold_tag="remote/${target_dataset}"
 
-  echo "Auditing snapshot tag: ${source_hold_tag}"
+    echo "Auditing snapshot tag: ${source_hold_tag}"
 
-  __znaphodl__load_tagged_source_snapshot
+    __znaphodl__load_tagged_source_snapshot
 
-  if [[ ! "${tagged_source_snapshot}" ]]; then
-    echo >&2 "[ERROR] Tag ${source_hold_tag} not found" \
-      "on ${source_dataset}"
-    echo >&2 '[INFO] Run `zfs hold '"${source_hold_tag}"'`' \
-      'on a common snapshot manually'
-    return 1
+    if [[ ! "${tagged_source_snapshot}" ]]; then
+      echo >&2 "[ERROR] Tag ${source_hold_tag} not found" \
+        "on ${source_dataset}"
+      echo >&2 '[INFO] Run `zfs hold '"${source_hold_tag}"'`' \
+        'on a common snapshot manually'
+      return 1
+    fi
+
+    echo "Previously tagged snapshot: ${tagged_source_snapshot}"
+
+    __znaphodl__load_latest_common_snapshot
+
+    if [[ ! "${latest_common_snapshot}" ]]; then
+      echo >&2 '[ERROR] Unable to find a common snapshot in' \
+        "datasets ${source_dataset} and ${target_dataset};" \
+        'aborting'
+      return 1
+    fi
+
+    echo "Latest common snapshot: ${latest_common_snapshot}"
+
+    if [[
+      "${tagged_source_snapshot}" == "${latest_common_snapshot}"
+    ]]; then
+      echo >&2 "[WARNING] no change in latest common snapshot"
+
+      if [[ "${log_available_space}" -eq 0 ]]; then
+        echo >&2 "[INFO] Nothing to do for ${latest_common_snapshot}"
+      fi
+    else
+      __znaphodl__move_tag_to_latest_common_snapshot
+    fi
   fi
 
-  echo "Previously tagged snapshot: ${tagged_source_snapshot}"
-
-  __znaphodl__load_latest_common_snapshot
-
-  if [[ ! "${latest_common_snapshot}" ]]; then
-    echo >&2 '[ERROR] Unable to find a common snapshot in' \
-      "datasets ${source_dataset} and ${target_dataset};" \
-      'aborting'
-    return 1
+  if [[ "${log_available_space}" -ne 0 ]]; then
+    echo "Querying available space on ${target_dataset_key}"
+    __znaphodl__load_target_dataset_space_available
+    echo "Available space on ${target_dataset_key}:" \
+      "${target_dataset_space_available}"
   fi
 
-  echo "Latest common snapshot: ${latest_common_snapshot}"
-
-  if [[
-    "${tagged_source_snapshot}" == "${latest_common_snapshot}"
-  ]]; then
-    echo >&2 "[WARNING] no change in latest common snapshot"
-    echo >&2 "[INFO] Nothing to do for ${latest_common_snapshot}"
-    return 0
-  fi
-
-  echo "Holding latest snapshot: ${latest_common_snapshot}"
-  sudo zfs hold "${source_hold_tag}" \
-    "${latest_common_snapshot}"
-
-  echo "Releasing tagged snapshot: ${tagged_source_snapshot}"
-  sudo zfs release "${source_hold_tag}" \
-    "${tagged_source_snapshot}"
-
-  echo "Tag ${source_hold_tag} has been moved successfully"
   echo "Done"
 }
 
