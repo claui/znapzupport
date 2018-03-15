@@ -115,13 +115,17 @@ function __znaphodl__move_tag_to_latest_common_snapshot {
 export -f __znaphodl__move_tag_to_latest_common_snapshot
 
 function __znaphodl {
+  local PROPERTY_NAMESPACE='cat.claudi'
+
   local OPTIND=1
   local option
 
   local latest_common_snapshot
+  local last_query_timestamp_property_name
   local log_available_space=0
   local source_dataset
   local source_hold_tag
+  local space_available_property_name
   local tag_snapshot=1
   local tagged_source_snapshot
   local target_dataset
@@ -212,6 +216,21 @@ function __znaphodl {
     __znaphodl__load_target_dataset_space_available
     echo "Available space on ${target_dataset_key}:" \
       "${target_dataset_space_available}"
+
+    last_query_timestamp_property_name="${PROPERTY_NAMESPACE}`
+      `:dst_${target_dataset_key}_last_query_timestamp"
+    echo "Setting property ${last_query_timestamp_property_name}"
+    sudo zfs set \
+      "${last_query_timestamp_property_name}=$(xdate '+%F %X')" \
+      "${source_dataset}"
+
+    space_available_property_name="${PROPERTY_NAMESPACE}`
+      `:dst_${target_dataset_key}_space_available"
+    echo "Setting property ${space_available_property_name}"
+    sudo zfs set \
+      "${space_available_property_name}`
+        `=${target_dataset_space_available}" \
+      "${source_dataset}"
   fi
 
   echo "Done"
