@@ -132,13 +132,13 @@ A **home dataset** is a ZFS dataset which has a `cat.claudi:id` property (dubbed
 
 A **backup dataset** is associated to a specific home dataset; it is defined as a ZFS dataset named `${pool}/backup/${dataset_id}/${username}`, with:
 
-- `${pool}` being the zpool name;
+- `${pool}` being the zpool name of the backup dataset;
 
 - `${dataset_id}` being the dataset ID of the home dataset; and
 
-- `${username}` being the name of the current user.
+- `${username}` being the last component of the home dataset.
 
-The `znaplizt` command only shows imported datasets.
+The `znaplizt` command only shows datasets of imported zpools.
 
 For each home or backup dataset, the command also lists its associated snapshots.
 
