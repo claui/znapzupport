@@ -26,13 +26,13 @@ function __znaplizt {
   local backup_selected=1
   local dataset=
   local dataset_id=
+  local dataset_last_component
   local given_dataset_id=
   local home_datasets=()
   local home_poolname
   local home_selected=1
   local poolnames
   local summarize=0
-  local username="$(whoami)"
   local verbose=0
 
   while getopts ':bhsvm:' option; do
@@ -111,13 +111,15 @@ function __znaplizt {
     fi
 
     if [[ "${backup_selected}" -ne 0 ]]; then
+      dataset_last_component="${dataset##*/}"
+
       if [[ "${verbose}" -ne 0 ]]; then
         echo >&2 "Looking for backup datasets of ${dataset}"
       fi
 
       for backup_poolname in "${poolnames[@]}"; do
         backup_dataset="${backup_poolname}/backup/${dataset_id}`
-          `/${username}"
+          `/${dataset_last_component}"
         if {
           zfs list -H -o name -t filesystem \
             "${backup_dataset}" >/dev/null 2>&1;
