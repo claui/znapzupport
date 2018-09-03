@@ -41,6 +41,7 @@ function __dataset_id__dataset_record {
   local DATASET_ID_PROPERTY_NAME='cat.claudi:id'
 
   local dataset_id
+  local OPTARG
   local OPTIND=1
   local option
   local parent_dataset

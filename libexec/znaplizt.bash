@@ -16,6 +16,7 @@ function __znaplizt__summarize_dataset {
 export -f __znaplizt__summarize_dataset
 
 function __znaplizt {
+  local OPTARG
   local OPTIND=1
   local option
 
