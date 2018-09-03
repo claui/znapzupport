@@ -103,13 +103,13 @@ function __znaphodl__load_tagged_source_snapshot {
 export -f __znaphodl__load_tagged_source_snapshot
 
 function __znaphodl__move_tag_to_latest_common_snapshot {
-  echo "Holding latest snapshot: ${latest_common_snapshot}"
+  echo >&2 "Holding latest snapshot: ${latest_common_snapshot}"
   sudo zfs hold "${source_hold_tag}" "${latest_common_snapshot}"
 
-  echo "Releasing tagged snapshot: ${tagged_source_snapshot}"
+  echo >&2 "Releasing tagged snapshot: ${tagged_source_snapshot}"
   sudo zfs release "${source_hold_tag}" "${tagged_source_snapshot}"
 
-  echo "Tag ${source_hold_tag} has been moved successfully"
+  echo >&2 "Tag ${source_hold_tag} has been moved successfully"
 }
 
 export -f __znaphodl__move_tag_to_latest_common_snapshot
@@ -173,7 +173,7 @@ function __znaphodl {
   else
     source_hold_tag="remote/${target_dataset}"
 
-    echo "Auditing snapshot tag: ${source_hold_tag}"
+    echo >&2 "Auditing snapshot tag: ${source_hold_tag}"
 
     __znaphodl__load_tagged_source_snapshot
 
@@ -185,7 +185,8 @@ function __znaphodl {
       return 1
     fi
 
-    echo "Previously tagged snapshot: ${tagged_source_snapshot}"
+    echo >&2 "Previously tagged snapshot:" \
+      "${tagged_source_snapshot}"
 
     __znaphodl__load_latest_common_snapshot
 
@@ -196,7 +197,7 @@ function __znaphodl {
       return 1
     fi
 
-    echo "Latest common snapshot: ${latest_common_snapshot}"
+    echo >&2 "Latest common snapshot: ${latest_common_snapshot}"
 
     if [[
       "${tagged_source_snapshot}" == "${latest_common_snapshot}"
@@ -212,28 +213,29 @@ function __znaphodl {
   fi
 
   if [[ "${log_available_space}" -ne 0 ]]; then
-    echo "Querying available space on ${target_dataset_key}"
+    echo >&2 "Querying available space on ${target_dataset_key}"
     __znaphodl__load_target_dataset_space_available
-    echo "Available space on ${target_dataset_key}:" \
+    echo >&2 "Available space on ${target_dataset_key}:" \
       "${target_dataset_space_available}"
 
     last_query_timestamp_property_name="${PROPERTY_NAMESPACE}`
       `:dst_${target_dataset_key}_last_query_timestamp"
-    echo "Setting property ${last_query_timestamp_property_name}"
+    echo >&2 "Setting property" \
+      "${last_query_timestamp_property_name}"
     sudo zfs set \
       "${last_query_timestamp_property_name}=$(xdate '+%F %X')" \
       "${source_dataset}"
 
     space_available_property_name="${PROPERTY_NAMESPACE}`
       `:dst_${target_dataset_key}_space_available"
-    echo "Setting property ${space_available_property_name}"
+    echo >&2 "Setting property ${space_available_property_name}"
     sudo zfs set \
       "${space_available_property_name}`
         `=${target_dataset_space_available}" \
       "${source_dataset}"
   fi
 
-  echo "Done"
+  echo >&2 "Done"
 }
 
 export -f __znaphodl
