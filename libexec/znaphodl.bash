@@ -173,7 +173,7 @@ function __znaphodl {
       ;;
     '?')
       echo >&2 "Usage:" \
-        "$(basename -- "$0") [-l] [-n]" \
+        "$(basename -- "$0") [-d] [-l] [-n]" \
         "source_dataset target_dataset_key"
       return 1
       ;;
