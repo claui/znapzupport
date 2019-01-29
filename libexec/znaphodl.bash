@@ -1,9 +1,29 @@
-function __znaphodl__cleanup {
+function __znaphodl__load_target_dataset_record_cleanup {
   [[ "${fifoname:-}" ]] && rm "${fifoname}"
   [[ "${fifodir:-}" ]] && rmdir "${fifodir}"
 }
 
-export -f __znaphodl__cleanup
+export -f __znaphodl__load_target_dataset_record_cleanup
+
+function __znaphodl__lockfile_cleanup {
+  if [[ "${debug}" -ne 0 ]]; then
+    echo >&2 "[DEBUG] Checking lockfile: ${lockfile}"
+  fi
+
+  if [[ -e "${lockfile:-}" ]]; then
+    if [[ "${debug}" -ne 0 ]]; then
+      echo >&2 "[DEBUG] Found lockfile"
+    fi
+
+    sudo rm -f "${lockfile}"
+
+    if [[ "${debug}" -ne 0 ]]; then
+      echo >&2 "[DEBUG] Lockfile deleted"
+    fi
+  fi
+}
+
+export -f __znaphodl__lockfile_cleanup
 
 function __znaphodl__load_latest_common_snapshot {
   local target_snapshots
@@ -50,7 +70,8 @@ export -f __znaphodl__load_target_dataset_space_available
 function __znaphodl__load_target_dataset_record {
   local pid exitstatus fifodir fifoname
 
-  trap __znaphodl__cleanup EXIT INT HUP TERM
+  trap __znaphodl__load_target_dataset_record_cleanup \
+    EXIT INT HUP TERM
   fifodir="$(mktemp -d)"
   fifoname="${fifodir}/znaphodl.$RANDOM.fifo"
   mkfifo -m0600 "${fifoname}" || return 1
@@ -63,7 +84,7 @@ function __znaphodl__load_target_dataset_record {
 
   wait "${pid}" || exitstatus="$?"
 
-  __znaphodl__cleanup
+  __znaphodl__load_target_dataset_record_cleanup
   trap - EXIT INT HUP TERM
   return "${exitstatus:-0}"
 }
@@ -115,13 +136,17 @@ function __znaphodl__move_tag_to_latest_common_snapshot {
 export -f __znaphodl__move_tag_to_latest_common_snapshot
 
 function __znaphodl {
+  local LOCKFILE_BASEDIR='/var/run/znapzupport'
+  local LOCKFILE_TTL_SECONDS=1800
   local PROPERTY_NAMESPACE='cat.claudi'
 
   local OPTIND=1
   local option
 
+  local debug=0
   local latest_common_snapshot
   local last_query_timestamp_property_name
+  local lockfile
   local log_available_space=0
   local source_dataset
   local source_hold_tag
@@ -135,8 +160,11 @@ function __znaphodl {
 
   set -eu
 
-  while getopts ':ln' option; do
+  while getopts ':dln' option; do
     case "${option}" in
+    d)
+      debug=1
+      ;;
     l)
       log_available_space=1
       ;;
@@ -160,6 +188,16 @@ function __znaphodl {
   sudo -v
 
   __znaphodl__load_target_dataset_record
+
+  sudo mkdir -p "${LOCKFILE_BASEDIR}"
+  lockfile="${LOCKFILE_BASEDIR}/$(
+    md5 <<< "${target_dataset_key}").lock"
+  echo >&2 "Waiting for previous runs to complete"
+  sudo lockfile -l "${LOCKFILE_TTL_SECONDS}" "${lockfile}"
+  if [[ "${debug}" -ne 0 ]]; then
+    echo >&2 "[DEBUG] Lockfile created: ${lockfile}"
+  fi
+  trap __znaphodl__lockfile_cleanup EXIT INT HUP TERM
 
   if [[ "${target_hostname}" ]]; then
     set -- sudo ssh -- "${target_hostname}"
@@ -211,6 +249,9 @@ function __znaphodl {
       __znaphodl__move_tag_to_latest_common_snapshot
     fi
   fi
+
+  trap - EXIT INT HUP TERM
+  __znaphodl__lockfile_cleanup
 
   if [[ "${log_available_space}" -ne 0 ]]; then
     echo >&2 "Querying available space on ${target_dataset_key}"

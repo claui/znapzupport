@@ -114,8 +114,13 @@ sudo znapzendzetup create \
     off 'znaphodl pool/tank mydstkey'
 ```
 
-The `znaphodl` command does not support any command-line options at this time.
+The `znaphodl` command supports the following command-line options:
 
+- `-d`: extra output for debugging
+
+- `-l`: add some logging (this will be saved in form of two ZFS properties on the source dataset: `cat.claudi:dst_${target_dataset_key}_last_query_timestamp` and `cat.claudi:dst_${target_dataset_key}_space_available`)
+
+- `-n`: dry run (will skip updating the snapshot tag but still allows logging via the `-l` option)
 
 ## znaphodlz
 
