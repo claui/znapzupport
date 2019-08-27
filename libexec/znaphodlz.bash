@@ -30,7 +30,7 @@ function __znaphodlz {
       __dataset_id__load_dataset_record -r "${home_poolname}";
     }; then
       echo $'\n'"Home dataset ${dataset}"
-      zfs list -r -H -t snapshot -o name "${dataset}" \
+      zfs list -H -t snapshot -o name "${dataset}" \
         | xxargs -r -n 1 -P 0 zfs holds -r -H \
         | cut -f '1,2'
     fi
