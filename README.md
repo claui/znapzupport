@@ -175,7 +175,7 @@ This suite of programs is in no way affiliated with, nor has it any connection t
 
 # License
 
-Copyright (c) 2018 Claudia <clau@tiqua.de>
+Copyright (c) 2018 – 2020 Claudia <clau@tiqua.de>
 
 Permission to use, copy, modify, and/or distribute this software for
 any purpose with or without fee is hereby granted, provided that the

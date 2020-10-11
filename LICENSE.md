@@ -1,4 +1,4 @@
-Copyright (c) 2018 Claudia <clau@tiqua.de>
+Copyright (c) 2018 – 2022 Claudia <clau@tiqua.de>
 
 Permission to use, copy, modify, and/or distribute this software for
 any purpose with or without fee is hereby granted, provided that the
