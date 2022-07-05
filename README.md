@@ -14,9 +14,11 @@ If you do use znapzupport, be advised that it is largely untested.
 
 To use znapzupport, you need:
 
-- OS&nbsp;X 10.11 El Capitan, macOS 10.12 Sierra, or a later macOS version;
+- Linux with `bash`, `sudo`, and `coreutils` installed (znapzupport may run on macOS but that’s now unmaintained and thus unsupported);
 
-- the [open source port of OpenZFS for macOS](https://openzfsonosx.org); and
+- OpenZFS;
+
+- the `lockfile` executable, e.g. from `procmail`; and
 
 - znapzend version 0.17.0 or newer.
 
