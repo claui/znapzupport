@@ -191,7 +191,7 @@ function __znaphodl {
 
   sudo mkdir -p "${LOCKFILE_BASEDIR}"
   lockfile="${LOCKFILE_BASEDIR}/$(
-    md5 <<< "${target_dataset_key}").lock"
+    sha256sum <<< "${target_dataset_key}" | cut -d ' ' -f 1).lock"
   echo >&2 "Waiting for previous runs to complete"
   sudo lockfile -l "${LOCKFILE_TTL_SECONDS}" "${lockfile}"
   if [[ "${debug}" -ne 0 ]]; then
