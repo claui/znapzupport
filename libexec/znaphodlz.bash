@@ -26,7 +26,7 @@ function __znaphodlz {
 
   for home_poolname in "${poolnames[@]}"; do
     if {
-      __dataset_id__load_dataset_record -r "${home_poolname}";
+      __dataset_id__load_dataset_record -r "$@" "${home_poolname}";
     }; then
       echo $'\n'"Home dataset ${dataset}"
       zfs list -H -t snapshot -o name "${dataset}" \
