@@ -78,7 +78,7 @@ function __znaphodl__load_target_dataset_record {
 
   (__znaphodl__target_dataset_record) > "${fifoname}" &
   pid="$!"
-  IFS=$'\t' read -d $'\n' target_dataset target_hostname \
+  IFS=$'\t' read -r -d $'\n' target_dataset target_hostname \
     < "${fifoname}" \
     || true
 
@@ -180,7 +180,7 @@ function __znaphodl {
     esac
   done
 
-  shift "$(($OPTIND-1))"
+  shift "$((OPTIND-1))"
 
   source_dataset="${1?}"
   target_dataset_key="${2?}"

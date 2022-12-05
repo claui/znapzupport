@@ -65,19 +65,18 @@ function __znaplizt {
     esac
   done
 
-  shift "$(($OPTIND-1))"
+  shift "$((OPTIND-1))"
 
-  if [[ "$@" ]]; then
+  if [[ "$#" -gt 0 ]]; then
     poolnames=("$@")
   else
-    __zpoolz__load_poolnames
-    if [[ "$?" -ne 0 ]]; then
+    if ! __zpoolz__load_poolnames; then
       echo >&2 "Unable to identify pool names"
       return 1
     fi
   fi
 
-  if [[ ! "${poolnames[@]}" ]]; then
+  if [[ "${#poolnames[@]}" -eq 0 ]]; then
     echo >&2 "No pools found"
     return 1
   fi

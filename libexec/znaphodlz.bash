@@ -6,13 +6,12 @@ function __znaphodlz {
   local home_poolname
   local poolnames
 
-  __zpoolz__load_poolnames
-  if [[ "$?" -ne 0 ]]; then
+  if ! __zpoolz__load_poolnames; then
     echo >&2 "Unable to identify pool names"
     return 1
   fi
 
-  if [[ ! "${poolnames[@]}" ]]; then
+  if [[ ! "${poolnames}" ]]; then
     echo >&2 "No pools found"
     return 1
   fi

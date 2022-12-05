@@ -16,6 +16,7 @@ export -f __dataset_id__cleanup
 
 function __dataset_id__load_dataset_record {
   local pid exitstatus fifodir fifoname
+  export dataset dataset_id
 
   trap __dataset_id__cleanup EXIT INT HUP TERM
   fifodir="$(mktemp -d)"
@@ -24,7 +25,7 @@ function __dataset_id__load_dataset_record {
 
   (__dataset_id__dataset_record "$@") > "${fifoname}" &
   pid="$!"
-  IFS=$'\t' read -d $'\n' dataset dataset_id < "${fifoname}" \
+  IFS=$'\t' read -r -d $'\n' dataset dataset_id < "${fifoname}" \
     || true
 
   wait "${pid}" || exitstatus="$?"
@@ -62,7 +63,7 @@ function __dataset_id__dataset_record {
     esac
   done
 
-  shift "$(($OPTIND-1))"
+  shift "$((OPTIND-1))"
 
   parent_dataset="$1"
 
