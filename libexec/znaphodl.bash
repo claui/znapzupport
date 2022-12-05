@@ -143,10 +143,8 @@ function __znaphodl {
   local OPTIND=1
   local option
 
-  local debug=0
   local latest_common_snapshot
   local last_query_timestamp_property_name
-  local lockfile
   local log_available_space=0
   local source_dataset
   local source_hold_tag
@@ -159,6 +157,8 @@ function __znaphodl {
   local target_dataset_space_available
 
   set -eu
+
+  debug=0
 
   while getopts ':dln' option; do
     case "${option}" in
