@@ -15,7 +15,7 @@ function __zpoolz__load_poolnames {
 
   (zpool list -H -o name) > "${fifoname}" &
   zpool_pid="$!"
-  IFS=$'\n' read -a poolnames -d '' < "${fifoname}" || true
+  IFS=$'\n' read -r -a poolnames -d '' < "${fifoname}" || true
 
   wait "${zpool_pid}" || zpool_status="$?"
 

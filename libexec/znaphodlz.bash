@@ -6,13 +6,12 @@ function __znaphodlz {
   local home_poolname
   local poolnames
 
-  __zpoolz__load_poolnames
-  if [[ "$?" -ne 0 ]]; then
+  if ! __zpoolz__load_poolnames; then
     echo >&2 "Unable to identify pool names"
     return 1
   fi
 
-  if [[ ! "${poolnames[@]}" ]]; then
+  if [[ ! "${poolnames}" ]]; then
     echo >&2 "No pools found"
     return 1
   fi
@@ -27,7 +26,7 @@ function __znaphodlz {
 
   for home_poolname in "${poolnames[@]}"; do
     if {
-      __dataset_id__load_dataset_record -r "${home_poolname}";
+      __dataset_id__load_dataset_record -r "$@" "${home_poolname}";
     }; then
       echo $'\n'"Home dataset ${dataset}"
       zfs list -H -t snapshot -o name "${dataset}" \

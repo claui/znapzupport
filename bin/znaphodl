@@ -1,9 +1,10 @@
 #!/bin/bash
-pushd "$(dirname -- "${BASH_SOURCE[0]}")/.." > /dev/null
+pushd "$(dirname -- "${BASH_SOURCE[0]}")/.." > /dev/null || exit 1
 BASENAME="$(basename -- "${BASH_SOURCE[0]}")"
 
+# shellcheck disable=SC1090
 . "libexec/${BASENAME}.bash"
 
-popd > /dev/null
+popd > /dev/null || exit 1
 shopt -s extglob
 __"${BASENAME//+([^a-z0-9_])/_}" "$@"

@@ -78,7 +78,7 @@ function __znaphodl__load_target_dataset_record {
 
   (__znaphodl__target_dataset_record) > "${fifoname}" &
   pid="$!"
-  IFS=$'\t' read -d $'\n' target_dataset target_hostname \
+  IFS=$'\t' read -r -d $'\n' target_dataset target_hostname \
     < "${fifoname}" \
     || true
 
@@ -143,10 +143,8 @@ function __znaphodl {
   local OPTIND=1
   local option
 
-  local debug=0
   local latest_common_snapshot
   local last_query_timestamp_property_name
-  local lockfile
   local log_available_space=0
   local source_dataset
   local source_hold_tag
@@ -159,6 +157,8 @@ function __znaphodl {
   local target_dataset_space_available
 
   set -eu
+
+  debug=0
 
   while getopts ':dln' option; do
     case "${option}" in
@@ -180,7 +180,7 @@ function __znaphodl {
     esac
   done
 
-  shift "$(($OPTIND-1))"
+  shift "$((OPTIND-1))"
 
   source_dataset="${1?}"
   target_dataset_key="${2?}"
