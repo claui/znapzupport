@@ -30,7 +30,7 @@ function __znaphodlz {
     }; then
       echo $'\n'"Home dataset ${dataset}"
       zfs list -H -t snapshot -o name "${dataset}" \
-        | xxargs -r -n 1 -P 16 zfs holds -r -H \
+        | xargs -r -n 1 -P 16 zfs holds -r -H \
         | cut -f '1,2'
     fi
   done
