@@ -14,7 +14,7 @@ If you do use znapzupport, be advised that it is largely untested.
 
 To use znapzupport, you need:
 
-- Linux with `bash`, `sudo`, and `coreutils` installed (znapzupport may run on macOS but that’s now unmaintained and thus unsupported);
+- Linux with `bash`, `sudo`, and `coreutils` installed (znapzupport no longer runs on macOS);
 
 - OpenZFS;
 
@@ -25,15 +25,12 @@ To use znapzupport, you need:
 
 ## Installation
 
-1. Make sure you have [Homebrew](https://brew.sh) installed.
+If you use the AUR, see this package:
 
-2. Run `brew tap claui/public` if you haven’t already done so.
+https://aur.archlinux.org/packages/znapzupport
 
-3. Run:
-
-```
-brew install znapzupport
-```
+You can install znapzupport manually by copying the entire project directory to any location;
+see the [PKGBUILD](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=znapzupport) on the AUR for an example.
 
 
 # The commands
@@ -177,7 +174,7 @@ This suite of programs is in no way affiliated with, nor has it any connection t
 
 # License
 
-Copyright (c) 2018 – 2020 Claudia <clau@tiqua.de>
+Copyright (c) 2018 – 2022 Claudia <clau@tiqua.de>
 
 Permission to use, copy, modify, and/or distribute this software for
 any purpose with or without fee is hereby granted, provided that the

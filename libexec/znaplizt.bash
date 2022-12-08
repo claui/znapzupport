@@ -10,7 +10,7 @@ function __znaplizt__summarize_dataset {
     used,logicalused,usedbydataset`
       `,referenced,logicalreferenced,usedbysnapshots \
     "${dataset}" \
-    | xxargs -r printf '%s    %-18s%10s\n'
+    | xargs -r printf '%s    %-18s%10s\n'
 }
 
 export -f __znaplizt__summarize_dataset
