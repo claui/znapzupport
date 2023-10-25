@@ -264,7 +264,7 @@ function __znaphodl {
     echo >&2 "Setting property" \
       "${last_query_timestamp_property_name}"
     sudo zfs set \
-      "${last_query_timestamp_property_name}=$(xdate '+%F %X')" \
+      "${last_query_timestamp_property_name}=$(date '+%F %X')" \
       "${source_dataset}"
 
     space_available_property_name="${PROPERTY_NAMESPACE}`
